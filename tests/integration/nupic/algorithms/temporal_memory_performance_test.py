@@ -100,7 +100,8 @@ class TemporalMemoryPerformanceTest(unittest.TestCase):
     times = []
 
     def tmComputeFn(pattern, instance):
-      instance.compute(pattern, learn)
+      x = numpy.array(list(pattern), dtype=numpy.uint32)
+      instance.compute(x, learn)
 
     def tpComputeFn(pattern, instance):
       array = self._patternToNumpyArray(pattern)
