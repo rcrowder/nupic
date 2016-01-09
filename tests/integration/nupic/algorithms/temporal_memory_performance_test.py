@@ -27,7 +27,8 @@ import numpy
 
 from nupic.data.generators.pattern_machine import PatternMachine
 from nupic.data.generators.sequence_machine import SequenceMachine
-from nupic.research.temporal_memory import TemporalMemory
+from nupic.bindings.algorithms import TemporalMemory
+#from nupic.research.temporal_memory import TemporalMemory
 from nupic.research.TP import TP
 from nupic.research.TP10X2 import TP10X2
 

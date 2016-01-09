@@ -26,6 +26,7 @@ Temporal Memory mixin that enables detailed monitoring of history.
 from collections import defaultdict
 
 import copy
+import numpy
 
 from prettytable import PrettyTable
 
@@ -328,7 +329,11 @@ class TemporalMemoryMonitorMixin(MonitorMixinBase):
     # Append last cycle's predictiveCells to *predicTEDCells* trace
     self._mmTraces["predictedCells"].data.append(self.predictiveCells)
 
-    super(TemporalMemoryMonitorMixin, self).compute(activeColumns, **kwargs)
+    x = numpy.array(list(activeColumns), dtype=numpy.uint32)
+    if kwargs.get("learn", True) is False:
+      super(TemporalMemoryMonitorMixin, self).compute(x, False)
+    else:
+      super(TemporalMemoryMonitorMixin, self).compute(x, True)
 
     # Append this cycle's predictiveCells to *predicTIVECells* trace
     self._mmTraces["predictiveCells"].data.append(self.predictiveCells)
