@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have an agreement
@@ -20,16 +19,14 @@
 # http://numenta.org/licenses/
 # ----------------------------------------------------------------------
 
+import nupic.bindings.algorithms
 import pprint
 import unittest
 from abc import ABCMeta
 
-import nupic.bindings.algorithms
-import nupic.research.temporal_memory
+import nupic.algorithms.temporal_memory
 from nupic.data.generators.pattern_machine import ConsecutivePatternMachine
-
-from nupic.test.abstract_temporal_memory_test import AbstractTemporalMemoryTest
-
+from nupic.support.unittesthelpers.abstract_temporal_memory_test import AbstractTemporalMemoryTest
 
 
 class TutorialTemporalMemoryTest(AbstractTemporalMemoryTest):
@@ -259,7 +256,7 @@ class TutorialTemporalMemoryTestsCPP(TutorialTemporalMemoryTest, unittest.TestCa
 
 class TutorialTemporalMemoryTestsPY(TutorialTemporalMemoryTest, unittest.TestCase):
   def getTMClass(self):
-    return nupic.research.temporal_memory.TemporalMemory
+    return nupic.algorithms.temporal_memory.TemporalMemory
 
 
 

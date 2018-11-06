@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have an agreement
@@ -176,6 +175,10 @@ class CoordinateEncoderTest(unittest.TestCase):
     # Test that we get the same output for the same input
     output2 = encode(encoder, coordinate, radius)
     self.assertTrue(np.array_equal(output2, output1))
+
+    # Test that a float radius raises an assertion error
+    with self.assertRaises(AssertionError):
+      encoder.encode((coordinate, float(radius)))
 
 
   def testEncodeSaturateArea(self):

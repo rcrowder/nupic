@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2016, Numenta, Inc.  Unless you have an agreement
@@ -30,9 +29,9 @@ from pkg_resources import resource_filename
 from nupic.data.file_record_stream import FileRecordStream
 from nupic.engine import Network
 from nupic.encoders import MultiEncoder, ScalarEncoder, DateEncoder
-from nupic.regions.RecordSensor import RecordSensor
-from nupic.regions.SPRegion import SPRegion
-from nupic.regions.TPRegion import TPRegion
+from nupic.regions.record_sensor import RecordSensor
+from nupic.regions.sp_region import SPRegion
+from nupic.regions.tm_region import TMRegion
 
 try:
   import capnp
@@ -58,16 +57,16 @@ SP_PARAMS = {
     # This must be set before creating the SPRegion
     "inputWidth": 0,
     "numActiveColumnsPerInhArea": 40,
-    "seed": 1956,
+    "seed": 42,
     "potentialPct": 0.8,
     "synPermConnected": 0.1,
     "synPermActiveInc": 0.0001,
     "synPermInactiveDec": 0.0005,
-    "maxBoost": 1.0,
+    "boostStrength": 0.0,
 }
 
-# Config field for TPRegion
-TP_PARAMS = {
+# Config field for TMRegion
+TM_PARAMS = {
     "verbosity": _VERBOSITY,
     "columnCount": 2048,
     "cellsPerColumn": 32,
@@ -80,6 +79,7 @@ TP_PARAMS = {
     "initialPerm": 0.21,
     "permanenceInc": 0.1,
     "permanenceDec": 0.1,
+    "predictedSegmentDecrement": .01,
     "globalDecay": 0.0,
     "maxAge": 0,
     "minThreshold": 9,
@@ -109,7 +109,7 @@ def createNetwork(dataSource, enableTP=False, temporalImp="py"):
 
   The network has a sensor region reading data from `dataSource` and passing
   the encoded representation to an SPRegion. The SPRegion output is passed to
-  a TPRegion.
+  a TMRegion.
 
   :param dataSource: a RecordStream instance to get data from
   :returns: a Network instance ready to run
@@ -141,10 +141,10 @@ def createNetwork(dataSource, enableTP=False, temporalImp="py"):
                srcOutput="temporalTopDownOut", destInput="temporalTopDownIn")
 
   if enableTP:
-    # Add the TPRegion on top of the SPRegion
-    TP_PARAMS["temporalImp"] = temporalImp
-    network.addRegion("temporalPoolerRegion", "py.TPRegion",
-                      json.dumps(TP_PARAMS))
+    # Add the TMRegion on top of the SPRegion
+    TM_PARAMS["temporalImp"] = temporalImp
+    network.addRegion("temporalPoolerRegion", "py.TMRegion",
+                      json.dumps(TM_PARAMS))
 
     network.link("spatialPoolerRegion", "temporalPoolerRegion", "UniformLink", "")
     network.link("temporalPoolerRegion", "spatialPoolerRegion", "UniformLink", "",

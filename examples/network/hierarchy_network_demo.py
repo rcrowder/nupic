@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2015, Numenta, Inc.  Unless you have an agreement
@@ -32,10 +31,10 @@ import csv
 import json
 import os
 import math
+import numpy
 
 from pkg_resources import resource_filename
 
-from nupic.algorithms.anomaly import computeRawAnomalyScore
 from nupic.data.file_record_stream import FileRecordStream
 from nupic.engine import Network
 from nupic.encoders import MultiEncoder
@@ -67,10 +66,10 @@ SP_PARAMS = {"spVerbosity": _VERBOSITY,
              "synPermConnected": 0.1,
              "synPermActiveInc": 0.0001,
              "synPermInactiveDec": 0.0005,
-             "maxBoost": 1.0}
+             "boostStrength": 0.0}
 
 # Parameter dict for TPRegion
-TP_PARAMS = {"verbosity": _VERBOSITY,
+TM_PARAMS = {"verbosity": _VERBOSITY,
              "temporalImp": "cpp",
              "seed": _SEED,
 
@@ -149,6 +148,9 @@ def createRecordSensor(network, name, dataSource):
   # Specify how RecordSensor encodes input values
   sensorRegion.encoder = createEncoder()
 
+  # Specify which sub-encoder should be used for "actValueOut"
+  network.regions[name].setParameter("predictedField", "consumption")
+
   # Specify the dataSource as a file record stream instance
   sensorRegion.dataSource = dataSource
   return sensorRegion
@@ -170,8 +172,8 @@ def createSpatialPooler(network, name, inputWidth):
 
 
 def createTemporalMemory(network, name):
-  temporalMemoryRegion = network.addRegion(name, "py.TPRegion",
-                                           json.dumps(TP_PARAMS))
+  temporalMemoryRegion = network.addRegion(name, "py.TMRegion",
+                                           json.dumps(TM_PARAMS))
   # Enable topDownMode to get the predicted columns output
   temporalMemoryRegion.setParameter("topDownMode", True)
   # Make sure learning is enabled (this is the default)
@@ -188,7 +190,7 @@ def createTemporalMemory(network, name):
 
 def createNetwork(dataSource):
   """Creates and returns a new Network with a sensor region reading data from
-  'dataSource'. There are two hierarchical levels, each with one SP and one TP.
+  'dataSource'. There are two hierarchical levels, each with one SP and one TM.
   @param dataSource - A RecordStream containing the input data
   @returns a Network ready to run
   """
@@ -205,10 +207,10 @@ def createNetwork(dataSource):
   linkParams = ""
   network.link(_RECORD_SENSOR, _L1_SPATIAL_POOLER, linkType, linkParams)
 
-  # Create and add a TP region
+  # Create and add a TM region
   l1temporalMemory = createTemporalMemory(network, _L1_TEMPORAL_MEMORY)
 
-  # Link SP region to TP region in the feedforward direction
+  # Link SP region to TM region in the feedforward direction
   network.link(_L1_SPATIAL_POOLER, _L1_TEMPORAL_MEMORY, linkType, linkParams)
 
   # Add a classifier
@@ -221,19 +223,25 @@ def createNetwork(dataSource):
                         'steps': '1',
 
                         # The specific implementation of the classifier to use
-                        # See CLAClassifierFactory#create for options
-                        'implementation': 'cpp',
+                        # See SDRClassifierFactory#create for options
+                        'implementation': 'py',
 
                         # Diagnostic output verbosity control;
                         # 0: silent; [1..6]: increasing levels of verbosity
                         'verbosity': 0}
 
-  l1Classifier = network.addRegion(_L1_CLASSIFIER, "py.CLAClassifierRegion",
+  l1Classifier = network.addRegion(_L1_CLASSIFIER, "py.SDRClassifierRegion",
                                    json.dumps(classifierParams))
   l1Classifier.setParameter('inferenceMode', True)
   l1Classifier.setParameter('learningMode', True)
   network.link(_L1_TEMPORAL_MEMORY, _L1_CLASSIFIER, linkType, linkParams,
                srcOutput="bottomUpOut", destInput="bottomUpIn")
+  network.link(_RECORD_SENSOR, _L1_CLASSIFIER, linkType, linkParams,
+               srcOutput="categoryOut", destInput="categoryIn")
+  network.link(_RECORD_SENSOR, _L1_CLASSIFIER, linkType, linkParams,
+               srcOutput="bucketIdxOut", destInput="bucketIdxIn")
+  network.link(_RECORD_SENSOR, _L1_CLASSIFIER, linkType, linkParams,
+               srcOutput="actValueOut", destInput="actValueIn")
 
   # Second Level
   l2inputWidth = l1temporalMemory.getSelf().getOutputElementCount("bottomUpOut")
@@ -243,36 +251,19 @@ def createNetwork(dataSource):
   createTemporalMemory(network, _L2_TEMPORAL_MEMORY)
   network.link(_L2_SPATIAL_POOLER, _L2_TEMPORAL_MEMORY, linkType, linkParams)
 
-  l2Classifier = network.addRegion(_L2_CLASSIFIER, "py.CLAClassifierRegion",
+  l2Classifier = network.addRegion(_L2_CLASSIFIER, "py.SDRClassifierRegion",
                                    json.dumps(classifierParams))
   l2Classifier.setParameter('inferenceMode', True)
   l2Classifier.setParameter('learningMode', True)
   network.link(_L2_TEMPORAL_MEMORY, _L2_CLASSIFIER, linkType, linkParams,
                srcOutput="bottomUpOut", destInput="bottomUpIn")
+  network.link(_RECORD_SENSOR, _L2_CLASSIFIER, linkType, linkParams,
+               srcOutput="categoryOut", destInput="categoryIn")
+  network.link(_RECORD_SENSOR, _L2_CLASSIFIER, linkType, linkParams,
+               srcOutput="bucketIdxOut", destInput="bucketIdxIn")
+  network.link(_RECORD_SENSOR, _L2_CLASSIFIER, linkType, linkParams,
+               srcOutput="actValueOut", destInput="actValueIn")
   return network
-
-
-
-def runClassifier(classifier, sensorRegion, tpRegion, recordNumber):
-  """Calls classifier manually, not using network"""
-
-  # Obtain input, its encoding, and the tp output for classification
-  actualInput = float(sensorRegion.getOutputData("sourceOut")[0])
-  scalarEncoder = sensorRegion.getSelf().encoder.encoders[0][1]
-  bucketIndex = scalarEncoder.getBucketIndices(actualInput)[0]
-  tpOutput = tpRegion.getOutputData("bottomUpOut").nonzero()[0]
-  classDict = {"actValue": actualInput, "bucketIdx": bucketIndex}
-
-  # Call classifier
-  results = classifier.getSelf().customCompute(recordNum=recordNumber,
-                                               patternNZ=tpOutput,
-                                               classification=classDict)
-
-  # Sort results by prediction confidence taking most confident prediction
-  mostLikelyResult = sorted(zip(results[1], results["actualValues"]))[-1]
-  predictionConfidence = mostLikelyResult[0]
-  predictedValue = mostLikelyResult[1]
-  return actualInput, predictedValue, predictionConfidence
 
 
 
@@ -304,36 +295,27 @@ def runNetwork(network, numRecords, writer):
     # Run the network for a single iteration
     network.run(1)
 
-    # Run l1 classifier manually and tally its error score
-    actual, l1Prediction, l1Confidence = runClassifier(l1Classifier,
-                                                       sensorRegion,
-                                                       l1TpRegion, record)
+    actual = float(sensorRegion.getOutputData("actValueOut")[0])
+
+    l1Predictions = l1Classifier.getOutputData("actualValues")
+    l1Probabilities = l1Classifier.getOutputData("probabilities")
+    l1Prediction = l1Predictions[l1Probabilities.argmax()]
     if l1PreviousPrediction is not None:
       l1ErrorSum += math.fabs(l1PreviousPrediction - actual)
     l1PreviousPrediction = l1Prediction
 
-    # Run l2 classifier manually and tally its error score
-    actual, l2Prediction, l2Confidence = runClassifier(l2Classifier,
-                                                       sensorRegion,
-                                                       l2TpRegion, record)
+    l2Predictions = l2Classifier.getOutputData("actualValues")
+    l2Probabilities = l2Classifier.getOutputData("probabilities")
+    l2Prediction = l2Predictions[l2Probabilities.argmax()]
     if l2PreviousPrediction is not None:
       l2ErrorSum += math.fabs(l2PreviousPrediction - actual)
     l2PreviousPrediction = l2Prediction
 
-    # nonzero() returns the indices of the elements that are non-zero,
-    # here the elements are the indices of the active columns
-    l1ActiveColumns = l1SpRegion.getOutputData("bottomUpOut").nonzero()[0]
-    l2ActiveColumns = l2SpRegion.getOutputData("bottomUpOut").nonzero()[0]
-
-    # Calculate the anomaly score using the active columns
-    # and previous predicted columns
-    l1AnomalyScore = computeRawAnomalyScore(l1ActiveColumns,
-                                            l1PreviousPredictedColumns)
-    l2AnomalyScore = computeRawAnomalyScore(l2ActiveColumns,
-                                            l2PreviousPredictedColumns)
+    l1AnomalyScore = l1TpRegion.getOutputData("anomalyScore")[0]
+    l2AnomalyScore = l2TpRegion.getOutputData("anomalyScore")[0]
 
     # Write record number, actualInput, and anomaly scores
-    writer.writerow((record, actual, l1AnomalyScore, l2AnomalyScore))
+    writer.writerow((record, actual, l1PreviousPrediction, l1AnomalyScore, l2PreviousPrediction, l2AnomalyScore))
 
     # Store the predicted columns for the next timestep
     l1PredictedColumns = l1TpRegion.getOutputData("topDownOut").nonzero()[0]

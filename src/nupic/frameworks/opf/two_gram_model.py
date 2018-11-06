@@ -25,47 +25,44 @@ import collections
 import itertools
 
 from nupic import encoders
-from nupic.data import fieldmeta
+from nupic.data import field_meta
 from nupic.frameworks.opf import model
-from nupic.frameworks.opf import opfutils
-from opfutils import InferenceType
+from nupic.frameworks.opf import opf_utils
+from opf_utils import InferenceType
+
+try:
+  import capnp
+except ImportError:
+  capnp = None
+if capnp:
+  from nupic.frameworks.opf.two_gram_model_capnp import TwoGramModelProto
+
 
 
 class TwoGramModel(model.Model):
-  """Two-gram benchmark model."""
+  """
+  Two-gram benchmark model.
+
+  :param inferenceType: (:class:`nupic.frameworks.opf.opf_utils.InferenceType`)
+  :param encoders: a dict of dicts, eventually sent to
+         :meth:`~nupic.encoders.multi.MultiEncoder.addMultipleEncoders` (see
+         docs of that method for param details).
+  """
 
   def __init__(self, inferenceType=InferenceType.TemporalNextStep,
                encoderParams=()):
-    """ Two-gram model constructor.
-
-    inferenceType: An opfutils.InferenceType value that specifies what type of
-        inference (i.e. TemporalNextStep, Classification, etc.)
-    encoders: Sequence of encoder params dictionaries.
-    """
     super(TwoGramModel, self).__init__(inferenceType)
 
-    self._logger = opfutils.initLogger(self)
+    self._logger = opf_utils.initLogger(self)
     self._reset = False
     self._hashToValueDict = dict()
     self._learningEnabled = True
     self._encoder = encoders.MultiEncoder(encoderParams)
     self._fieldNames = self._encoder.getScalarNames()
-    self._prevValues = [None] * len(self._fieldNames)
+    self._prevValues = [] * len(self._fieldNames)
     self._twoGramDicts = [dict() for _ in xrange(len(self._fieldNames))]
 
   def run(self, inputRecord):
-    """Run one iteration of this model.
-
-    Args:
-      inputRecord: A record object formatted according to
-          nupic.data.FileSource.getNext() result format.
-
-    Returns:
-      A ModelResult named tuple (see opfutils.py). The contents of
-      ModelResult.inferences depends on the specific inference type of this
-      model, which can be queried by getInferenceType().
-      TODO: Implement getInferenceType()?
-    """
     results = super(TwoGramModel, self).run(inputRecord)
 
     # Set up the lists of values, defaults, and encoded values.
@@ -74,7 +71,7 @@ class TwoGramModel(model.Model):
     inputFieldEncodings = self._encoder.encodeEachField(inputRecord)
     inputBuckets = self._encoder.getBucketIndices(inputRecord)
 
-    results.sensorInput = opfutils.SensorInput(
+    results.sensorInput = opf_utils.SensorInput(
         dataRow=values, dataEncodings=inputFieldEncodings,
         sequenceReset=int(self._reset))
 
@@ -110,76 +107,108 @@ class TwoGramModel(model.Model):
         encodedPredictions.append(self._encoder.encodeField(fieldName,
                                                             default))
     results.inferences = dict()
-    results.inferences[opfutils.InferenceElement.prediction] = predictions
-    results.inferences[opfutils.InferenceElement.encodings] = encodedPredictions
+    results.inferences[opf_utils.InferenceElement.prediction] = predictions
+    results.inferences[opf_utils.InferenceElement.encodings] = encodedPredictions
 
     self._prevValues = inputBuckets
     self._reset = False
     return results
 
   def finishLearning(self):
-    """Places the model in a permanent "finished learning" mode.
-
-    Once called, the model will not be able to learn from subsequent input
-    records. Learning may not be resumed on a given instance of the model once
-    this is called as the implementation may optimize itself by pruning data
-    structures that are necessary for learning.
-    """
     self._learningEnabled = False
 
   def setFieldStatistics(self,fieldStats):
     """
-    This method is used for the data source to communicate to the 
-    model any statistics that it knows about the fields 
     Since the two-gram has no use for this information, this is a no-op
     """
     pass
 
   def getFieldInfo(self):
-    """Returns the metadata specifying the format of the model's output.
-
-    The result may be different than the list of
-    nupic.data.fieldmeta.FieldMetaInfo objects supplied at initialization due
-    to the transcoding of some input fields into meta- fields, such as
-    datetime -> dayOfWeek, timeOfDay, etc.
-    """
     fieldTypes = self._encoder.getDecoderOutputFieldTypes()
     assert len(self._fieldNames) == len(fieldTypes)
 
-    return tuple(fieldmeta.FieldMetaInfo(*args) for args in
+    return tuple(field_meta.FieldMetaInfo(*args) for args in
                  itertools.izip(
                      self._fieldNames, fieldTypes,
-                     itertools.repeat(fieldmeta.FieldMetaSpecial.none)))
+                     itertools.repeat(field_meta.FieldMetaSpecial.none)))
 
   def getRuntimeStats(self):
-    """Get the runtime statistics specific to the model.
-
-    I.E. activeCellOverlapAvg
-
-    Returns:
-      A dict mapping statistic names to values.
-    """
     # TODO: Add debugging stats.
     return dict()
 
   def _getLogger(self):
-    """Get the logger created by this subclass.
-
-    Returns:
-      A logging.Logger object. Should not be None.
-    """
     return self._logger
 
   def resetSequenceStates(self):
-    """Called to indicate the start of a new sequence.
-
-    The next call to run should not perform learning.
-    """
     self._reset = True
 
+
+  @staticmethod
+  def getSchema():
+    return TwoGramModelProto
+
+
+  @classmethod
+  def read(cls, proto):
+    """
+    :param proto: capnp TwoGramModelProto message reader
+    """
+    instance = object.__new__(cls)
+    super(TwoGramModel, instance).__init__(proto=proto.modelBase)
+
+    instance._logger = opf_utils.initLogger(instance)
+
+    instance._reset = proto.reset
+    instance._hashToValueDict = {x.hash: x.value
+                                 for x in proto.hashToValueDict}
+    instance._learningEnabled = proto.learningEnabled
+    instance._encoder = encoders.MultiEncoder.read(proto.encoder)
+    instance._fieldNames = instance._encoder.getScalarNames()
+    instance._prevValues = list(proto.prevValues)
+    instance._twoGramDicts = [dict() for _ in xrange(len(proto.twoGramDicts))]
+    for idx, field in enumerate(proto.twoGramDicts):
+      for entry in field:
+        prev = None if entry.value == -1 else entry.value
+        instance._twoGramDicts[idx][prev] = collections.defaultdict(int)
+        for bucket in entry.buckets:
+          instance._twoGramDicts[idx][prev][bucket.index] = bucket.count
+
+    return instance
+
+
+  def write(self, proto):
+    """
+    :param proto: capnp TwoGramModelProto message builder
+    """
+    super(TwoGramModel, self).writeBaseToProto(proto.modelBase)
+
+    proto.reset = self._reset
+    proto.learningEnabled = self._learningEnabled
+    proto.prevValues = self._prevValues
+    self._encoder.write(proto.encoder)
+    proto.hashToValueDict = [{"hash": h, "value": v}
+                             for h, v in self._hashToValueDict.items()]
+
+    twoGramDicts = []
+    for items in self._twoGramDicts:
+      twoGramArr = []
+      for prev, values in items.iteritems():
+        buckets = [{"index": index, "count": count}
+                   for index, count in values.iteritems()]
+        if prev is None:
+          prev = -1
+        twoGramArr.append({"value": prev, "buckets": buckets})
+
+      twoGramDicts.append(twoGramArr)
+
+    proto.twoGramDicts = twoGramDicts
+
+
   def __getstate__(self):
+    # NOTE This deletion doesn't seem to make sense, as someone might want to
+    # serialize and then continue to use the model instance.
     del self._logger
     return self.__dict__
 
   def __setstate__(self):
-    self._logger = opfutils.initLogger(self)
+    self._logger = opf_utils.initLogger(self)

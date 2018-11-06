@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2016, Numenta, Inc.  Unless you have an agreement
@@ -30,3 +29,7 @@ from extensive_tm_test_base import ExtensiveTemporalMemoryTest
 class ExtensiveTemporalMemoryTestCPP(ExtensiveTemporalMemoryTest, unittest.TestCase):
   def getTMClass(self):
     return nupic.bindings.algorithms.TemporalMemory
+
+
+if __name__ == "__main__":
+  unittest.main()

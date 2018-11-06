@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2016, Numenta, Inc.  Unless you have an agreement
@@ -24,33 +23,24 @@ import json
 import unittest
 import numpy
 
-from nupic.regions.TPRegion import TPRegion
+from nupic.regions.tm_region import TMRegion
 
 from network_creation_common import createAndRunNetwork
 
 
 
 class TemporalMemoryCompatibilityTest(unittest.TestCase):
-  """Temporal Memory compatability tests between different implementations.
 
-  TODO: Test with predictedSegmentDecrement set to non-zero. See
-  https://github.com/numenta/nupic/issues/2999
-  """
-
-
-  @unittest.skip("There are slight differences between implementations that"
-                 "prevent this from passing still. See "
-                 "https://github.com/numenta/nupic/issues/2980")
   def testTMPyCpp(self):
     """
     Test compatibility between C++ and Python TM implementation.
     """
-    results1 = createAndRunNetwork(TPRegion,
+    results1 = createAndRunNetwork(TMRegion,
                                    "bottomUpOut",
                                    checkpointMidway=False,
                                    temporalImp="tm_cpp")
 
-    results2 = createAndRunNetwork(TPRegion,
+    results2 = createAndRunNetwork(TMRegion,
                                    "bottomUpOut",
                                    checkpointMidway=False,
                                    temporalImp="tm_py")

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -24,7 +23,7 @@
 
 import unittest2 as unittest
 
-from nupic.encoders.scalarspace import ScalarSpaceEncoder, DeltaEncoder
+from nupic.encoders.scalar_space import ScalarSpaceEncoder, DeltaEncoder
 
 
 
@@ -42,7 +41,7 @@ class ScalarSpaceEncoderTest(unittest.TestCase):
                              forced=True)
     self.assertFalse(isinstance(sse, DeltaEncoder))
 
-     
+
 
 if __name__ == '__main__':
   unittest.main()

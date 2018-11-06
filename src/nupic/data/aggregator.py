@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -27,7 +26,7 @@ from pkg_resources import resource_filename
 import time
 
 from nupic.data import SENTINEL_VALUE_FOR_MISSING_DATA
-from nupic.data.fieldmeta import FieldMetaSpecial
+from nupic.data.field_meta import FieldMetaSpecial
 from nupic.data.file_record_stream import FileRecordStream
 
 

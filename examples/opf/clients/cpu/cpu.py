@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -29,7 +28,7 @@ import psutil
 import matplotlib.pyplot as plt
 
 from nupic.data.inference_shifter import InferenceShifter
-from nupic.frameworks.opf.modelfactory import ModelFactory
+from nupic.frameworks.opf.model_factory import ModelFactory
 
 import model_params
 
@@ -82,10 +81,10 @@ def runCPU():
     actline.set_ydata(actHistory)  # update the data
     predline.set_ydata(predHistory)  # update the data
     plt.draw()
-    plt.legend( ('actual','predicted') )    
+    plt.legend( ('actual','predicted') )
 
     # Make sure we wait a total of 2 seconds per iteration.
-    try: 
+    try:
       plt.pause(SECONDS_PER_STEP)
     except:
       pass

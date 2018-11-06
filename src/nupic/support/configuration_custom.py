@@ -19,6 +19,12 @@
 # http://numenta.org/licenses/
 # ----------------------------------------------------------------------
 
+"""
+This Configuration implementation allows for persistent configuration updates
+stored in ``nupic-custom.xml`` in the site conf folder.
+"""
+
+
 from __future__ import with_statement
 
 from copy import copy
@@ -29,7 +35,7 @@ import sys
 import traceback
 from xml.etree import ElementTree
 
-from nupic.support.fshelpers import makeDirectoryFromAbsolutePath
+from nupic.support.fs_helpers import makeDirectoryFromAbsolutePath
 from nupic.support.configuration_base import Configuration as ConfigurationBase
 
 
@@ -39,64 +45,62 @@ def _getLogger():
 
 
 class Configuration(ConfigurationBase):
-  """ This class extends the ConfigurationBase implementation with the ability
-  to read and write custom, persistent parameters. The custom settings will be
-  stored in the nupic-custom.xml file.
+  """ 
+  This class extends the 
+  :class:`nupic.support.configuration_base.ConfigurationBase` implementation 
+  with the ability to read and write custom, persistent parameters. The custom 
+  settings will be stored in the ``nupic-custom.xml`` file.
 
-  If the environment variable 'NTA_CONF_PATH' is defined, then the configuration
-  files are expected to be in the NTA_CONF_PATH search path, which is a ':'
-  separated list of directories (on Windows the seperator is a ';').
-  If NTA_CONF_PATH is not defined, then it is assumed to be NTA/conf/default
-  (typically ~/nupic/current/conf/default).
+  If the environment variable ``NTA_CONF_PATH`` is defined, then the 
+  configuration files are expected to be in the ``NTA_CONF_PATH`` search path, 
+  which is a ``:`` separated list of directories (on Windows the separator is a 
+  ``;``). If ``NTA_CONF_PATH`` is not defined, then it is assumed to be 
+  ``$NTA/conf/default`` (typically ``~/nupic/current/conf/default``).
   """
 
 
   @classmethod
   def getCustomDict(cls):
-    """ Return a dict containing all custom configuration properties
-
-    Parameters:
-    ----------------------------------------------------------------
-    retval:      dict containing all custom configuration properties.
+    """ 
+    returns: (dict) containing all custom configuration properties.
     """
     return _CustomConfigurationFileWrapper.getCustomDict()
 
 
   @classmethod
   def setCustomProperty(cls, propertyName, value):
-    """ Set a single custom setting and persist it to the custom
-    configuration store.
+    """ 
+    Set a single custom setting and persist it to the custom configuration 
+    store.
 
-    Parameters:
-    ----------------------------------------------------------------
-    propertyName: string containing the name of the property to get
-    value: value to set the property to
+    :param propertyName: (string) containing the name of the property to get
+    :param value: (object) value to set the property to
     """
     cls.setCustomProperties({propertyName : value})
 
 
   @classmethod
   def setCustomProperties(cls, properties):
-    """ Set multiple custom properties and persist them to the custom
-    configuration store.
+    """ 
+    Set multiple custom properties and persist them to the custom configuration 
+    store.
 
-    Parameters:
-    ----------------------------------------------------------------
-    properties: a dict of property name/value pairs to set
+    :param properties: (dict) of property name/value pairs to set
     """
     _getLogger().info("Setting custom configuration properties=%r; caller=%r",
                       properties, traceback.format_stack())
-    
+
     _CustomConfigurationFileWrapper.edit(properties)
-      
+
     for propertyName, value in properties.iteritems():
       cls.set(propertyName, value)
 
-  
+
   @classmethod
   def clear(cls):
-    """ Clear all configuration properties from in-memory cache, but do NOT
-    alter the custom configuration file. Used in unit-testing.
+    """
+    Clear all configuration properties from in-memory cache, but do NOT alter 
+    the custom configuration file. Used in unit-testing.
     """
     # Clear the in-memory settings cache, forcing reload upon subsequent "get"
     # request.
@@ -104,12 +108,13 @@ class Configuration(ConfigurationBase):
 
     # Reset in-memory custom configuration info.
     _CustomConfigurationFileWrapper.clear(persistent=False)
-    
-  
+
+
   @classmethod
   def resetCustomConfig(cls):
-    """ Clear all custom configuration settings and delete the persistent
-    custom configuration store.
+    """ 
+    Clear all custom configuration settings and delete the persistent custom 
+    configuration store.
     """
     _getLogger().info("Resetting all custom configuration properties; "
                       "caller=%r", traceback.format_stack())
@@ -125,12 +130,12 @@ class Configuration(ConfigurationBase):
 
   @classmethod
   def loadCustomConfig(cls):
-    """ Loads custom configuration settings from their persistent storage.
-    DO NOT CALL THIS: It's typically not necessary to call this method
-    directly - see NOTE below.
+    """ 
+    Loads custom configuration settings from their persistent storage.
     
-    NOTE: this method exists *solely* for the benefit of prepare_conf.py, which
-    needs to load configuration files selectively.
+    .. warning :: DO NOT CALL THIS: It's typically not necessary to call this 
+       method directly. This method exists *solely* for the benefit of 
+       ``prepare_conf.py``, which needs to load configuration files selectively.
     """
     cls.readConfigFile(_CustomConfigurationFileWrapper.customFileName)
 
@@ -273,7 +278,7 @@ class _CustomConfigurationFileWrapper(object):
       newProp.append(valueTag)
 
       elements.append(newProp)
-    
+
     try:
       makeDirectoryFromAbsolutePath(os.path.dirname(configFilePath))
       with open(configFilePath,'w') as fp:

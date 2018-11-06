@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have an agreement
@@ -86,15 +85,15 @@ class NetworkSugarTest(unittest.TestCase):
     # for iteration
     for i, r in enumerate(regions):
       if i == 0:
-        self.assertEqual(r, 'r1')
+        self.assertEqual(r[0], 'r1')
       elif i == 1:
-        self.assertEqual(r, 'r2')
+        self.assertEqual(r[0], 'r2')
       else:
         self.fail("Expected i == 0 or i == 1")
 
     # test .keys()
     keys = regions.keys()
-    self.assertEqual(keys, set(['r1', 'r2']))
+    self.assertEqual(keys, list(['r1', 'r2']))
 
     # test .values()
     values = regions.values()

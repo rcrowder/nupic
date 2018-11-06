@@ -26,48 +26,68 @@ import numpy
 from nupic.data import SENTINEL_VALUE_FOR_MISSING_DATA
 from nupic.encoders.base import Encoder
 from nupic.encoders.scalar import ScalarEncoder
+try:
+  import capnp
+except ImportError:
+  capnp = None
+if capnp:
+  from nupic.encoders.date_capnp import DateEncoderProto
 
 
 
 class DateEncoder(Encoder):
-  """A date encoder encodes a date according to encoding parameters
-  specified in its constructor.
-  The input to a date encoder is a datetime.datetime object. The output
-  is the concatenation of several sub-encodings, each of which encodes
-  a different aspect of the date. Which sub-encodings are present, and
-  details of those sub-encodings, are specified in the DateEncoder
-  constructor.
+  """
+  A date encoder encodes a date according to encoding parameters specified in
+  its constructor. The input to a date encoder is a datetime.datetime object.
+  The output is the concatenation of several sub-encodings, each of which
+  encodes a different aspect of the date. Which sub-encodings are present, and
+  details of those sub-encodings, are specified in the DateEncoder constructor.
 
   Each parameter describes one attribute to encode. By default, the attribute
   is not encoded.
 
-  season (season of the year; units = day):
-    (int) width of attribute; default radius = 91.5 days (1 season)
-    (tuple)  season[0] = width; season[1] = radius
+  :param season: (int | tuple) Season of the year, where units = day.
 
-  dayOfWeek (monday = 0; units = day)
-    (int) width of attribute; default radius = 1 day
-    (tuple) dayOfWeek[0] = width; dayOfWeek[1] = radius
+      - (int) width of attribute; default radius = 91.5 days (1 season)
+      - (tuple)  season[0] = width; season[1] = radius
 
-  weekend (boolean: 0, 1)
-    (int) width of attribute
+  :param dayOfWeek: (int | tuple) Day of week, where monday = 0, units = 1 day.
 
-  holiday (boolean: 0, 1)
-    (int) width of attribute
+      - (int) width of attribute; default radius = 1 day
+      - (tuple) dayOfWeek[0] = width; dayOfWeek[1] = radius
 
-  timeOfday (midnight = 0; units = hour)
-    (int) width of attribute: default radius = 4 hours
-    (tuple) timeOfDay[0] = width; timeOfDay[1] = radius
+  :param weekend: (int) Is a weekend or not. A block of bits either 0s or 1s.
 
-  customDays TODO: what is it?
+      - (int) width of attribute
 
-  forced (default True) : if True, skip checks for parameters' settings; see encoders/scalar.py for details
+  :param holiday: (int) Is a holiday or not, boolean: 0, 1
 
+      - (int) width of attribute
+
+  :param timeOfday: (int | tuple) Time of day, where midnight = 0, units = hour.
+
+      - (int) width of attribute: default radius = 4 hours
+      - (tuple) timeOfDay[0] = width; timeOfDay[1] = radius
+
+  :param customDays: (tuple) A way to custom encode specific days of the week.
+
+      - [0] (int) Width of attribute
+      - [1] (str | list) Either a string representing a day of the week like
+        "Monday" or "mon", or a list of these strings.
+
+  :param forced: (default True) if True, skip checks for parameters' settings.
+         See :class:`~.nupic.encoders.scalar.ScalarEncoder` for details.
+
+  :param holidays: (list) a list of tuples for holidays.
+
+      - Each holiday is either (month, day) or (year, month, day).
+        The former will use the same month day every year eg: (12, 25) for Christmas.
+        The latter will be a one off holiday eg: (2018, 4, 1) for Easter Sunday 2018
   """
 
 
   def __init__(self, season=0, dayOfWeek=0, weekend=0, holiday=0, timeOfDay=0, customDays=0,
-                name = '', forced=True):
+                name='', forced=True, holidays=()):
 
     self.width = 0
     self.description = []
@@ -121,7 +141,7 @@ class DateEncoder(Encoder):
     if weekend != 0:
       # Binary value. Not sure if this makes sense. Also is somewhat redundant
       #  with dayOfWeek
-      #Append radius if it was not provided
+      #  Append radius if it was not provided
       if not hasattr(weekend, "__getitem__"):
         weekend = (weekend, 1)
       self.weekendEncoder = ScalarEncoder(w=weekend[0], minval=0, maxval=1,
@@ -132,9 +152,9 @@ class DateEncoder(Encoder):
       self.description.append(("weekend", self.weekendOffset))
       self.encoders.append(("weekend", self.weekendEncoder, self.weekendOffset))
 
-    #Set up custom days encoder, first argument in tuple is width
-    #second is either a single day of the week or a list of the days
-    #you want encoded as ones.
+    # Set up custom days encoder, first argument in tuple is width
+    #  second is either a single day of the week or a list of the days
+    #  you want encoded as ones.
     self.customDaysEncoder = None
     if customDays !=0:
       customDayEncoderName = ""
@@ -187,6 +207,10 @@ class DateEncoder(Encoder):
       self.width += self.holidayEncoder.getWidth()
       self.description.append(("holiday", self.holidayOffset))
       self.encoders.append(("holiday", self.holidayEncoder, self.holidayOffset))
+      for h in holidays:
+        if not (hasattr(h, "__getitem__") or len(h) not in [2,3]):
+          raise ValueError("Holidays must be an iterable of length 2 or 3")
+      self.holidays = holidays
 
     self.timeOfDayEncoder = None
     if timeOfDay != 0:
@@ -290,11 +314,17 @@ class DateEncoder(Encoder):
       #  0->1 on the day before the holiday and 1->0 on the day after the holiday.
       # Currently the only holiday we know about is December 25
       # holidays is a list of holidays that occur on a fixed date every year
-      holidays = [(12, 25)]
+      if len(self.holidays) == 0:
+        holidays = [(12, 25)]
+      else:
+        holidays = self.holidays
       val = 0
       for h in holidays:
         # hdate is midnight on the holiday
-        hdate = datetime.datetime(timetuple.tm_year, h[0], h[1], 0, 0, 0)
+        if len(h) == 3:
+          hdate = datetime.datetime(h[0], h[1], h[2], 0, 0, 0)
+        else:
+          hdate = datetime.datetime(timetuple.tm_year, h[0], h[1], 0, 0, 0)
         if input > hdate:
           diff = input - hdate
           if diff.days == 0:
@@ -303,7 +333,7 @@ class DateEncoder(Encoder):
             break
           elif diff.days == 1:
             # ramp smoothly from 1 -> 0 on the next day
-            val = 1.0 - (float(diff.seconds) / (86400))
+            val = 1.0 - (float(diff.seconds) / 86400)
             break
         else:
           diff = hdate - input
@@ -320,19 +350,15 @@ class DateEncoder(Encoder):
 
 
   def getScalars(self, input):
-    """ See method description in base.py
+    """
+    See method description in :meth:`~.nupic.encoders.base.Encoder.getScalars`.
 
-    Parameters:
-    -----------------------------------------------------------------------
-    input:          A datetime object representing the time being encoded
+    :param input: (datetime) representing the time being encoded
 
-    Returns:        A numpy array of the corresponding scalar values in
-                    the following order:
-
-                    [season, dayOfWeek, weekend, holiday, timeOfDay]
-
-                    Note: some of these fields might be omitted if they were not
-                    specified in the encoder
+    :returns: A numpy array of the corresponding scalar values in the following
+              order: season, dayOfWeek, weekend, holiday, timeOfDay. Some of
+              these fields might be omitted if they were not specified in the
+              encoder.
     """
     return numpy.array(self.getEncodedValues(input))
 
@@ -379,6 +405,9 @@ class DateEncoder(Encoder):
   def getDescription(self):
     return self.description
 
+  @classmethod
+  def getSchema(cls):
+    return DateEncoderProto
 
   @classmethod
   def read(cls, proto):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -30,8 +29,8 @@ import datetime
 
 from nupic.data.inference_shifter import InferenceShifter
 from nupic.frameworks.opf.metrics import MetricSpec
-from nupic.frameworks.opf.modelfactory import ModelFactory
-from nupic.frameworks.opf.predictionmetricsmanager import MetricsManager
+from nupic.frameworks.opf.model_factory import ModelFactory
+from nupic.frameworks.opf.prediction_metrics_manager import MetricsManager
 
 import nupic_output
 
@@ -126,6 +125,9 @@ def runIoThroughNupic(inputData, model, gymName, plot):
 
     prediction = result.inferences["multiStepBestPredictions"][1]
     output.write([timestamp], [consumption], [prediction])
+
+    if plot and counter % 20 == 0:
+        output.refreshGUI()
 
   inputFile.close()
   output.close()

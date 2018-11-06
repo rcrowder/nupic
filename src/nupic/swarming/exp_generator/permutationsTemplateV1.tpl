@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -75,7 +74,7 @@ permutations = {
       },
     },
 
-    'tpParams': {
+    'tmParams': {
       'activationThreshold': [12, 16],
       'minThreshold': [9, 12],
     },

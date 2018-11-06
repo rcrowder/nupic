@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -26,6 +25,8 @@ This script is the command-line interface for running swarms in nupic."""
 import sys
 import os
 import optparse
+import logging
+logging.basicConfig()
 
 from nupic.swarming import permutations_runner
 from nupic.swarming.permutations_runner import DEFAULT_OPTIONS

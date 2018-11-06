@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2015, Numenta, Inc.  Unless you have an agreement
@@ -28,7 +27,7 @@ import unittest
 import mock
 
 
-from nupic.data.fieldmeta import FieldMetaInfo, FieldMetaType, FieldMetaSpecial
+from nupic.data.field_meta import FieldMetaInfo, FieldMetaType, FieldMetaSpecial
 from nupic.data.record_stream import ModelRecordEncoder, RecordStreamIface
 
 

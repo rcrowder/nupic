@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -22,7 +21,7 @@
 
 import unittest2 as unittest
 
-from nupic.regions.Spec import (Spec,
+from nupic.regions.spec import (Spec,
                                 InputSpec,
                                 OutputSpec,
                                 ParameterSpec,

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have purchased from
@@ -25,7 +24,7 @@ import unittest2 as unittest
 
 import numpy
 
-from nupic.algorithms.KNNClassifier import KNNClassifier
+from nupic.algorithms.knn_classifier import KNNClassifier
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 class KNNCategoriesTest(unittest.TestCase):
   """Tests how k Nearest Neighbor classifier handles categories"""
 
-  
+
   def testCategories(self):
     # We need determinism!
     #

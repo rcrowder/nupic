@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have an agreement
@@ -26,7 +25,7 @@ from abc import ABCMeta
 
 from nupic.data.generators.pattern_machine import PatternMachine
 
-from nupic.test.abstract_temporal_memory_test import AbstractTemporalMemoryTest
+from nupic.support.unittesthelpers.abstract_temporal_memory_test import AbstractTemporalMemoryTest
 
 
 
@@ -64,7 +63,7 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
   Each input pattern can optionally have an amount of spatial noise represented
   by X, where X is the probability of switching an on bit with a random bit.
 
-  Training: The TP is trained with P passes of the M sequences. There
+  Training: The TM is trained with P passes of the M sequences. There
   should be a reset between sequences. The total number of iterations during
   training is P*N*M.
 
@@ -97,7 +96,7 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
       connectedPermanence = 0.7
       permanenceIncrement = 0.2
 
-  Now we train the TP with the B1 sequence 4 times (P=4). This will increment
+  Now we train the TM with the B1 sequence 4 times (P=4). This will increment
   the permanences to be above 0.8 and at that point the inference will be correct.
   This test will ensure the basic match function and segment activation rules are
   working correctly.
@@ -290,7 +289,7 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
       connectedPermanence = 0.7
       permanenceIncrement = 0.2
 
-    Now we train the TP with the B1 sequence 4 times (P=4). This will increment
+    Now we train the TM with the B1 sequence 4 times (P=4). This will increment
     the permanences to be above 0.8 and at that point the inference will be correct.
     This test will ensure the basic match function and segment activation rules are
     working correctly.
@@ -350,7 +349,8 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
     """Like B5, but with activationThreshold = 8 and with each pattern
     corrupted by a small amount of spatial noise (X = 0.05)."""
     self.init({"cellsPerColumn": 4,
-               "activationThreshold": 8})
+               "activationThreshold": 8,
+               "minThreshold": 8})
 
     numbers = self.sequenceMachine.generateNumbers(1, 100)
     sequence = self.sequenceMachine.generateFromNumbers(numbers)
@@ -498,7 +498,8 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
     """Sensitivity to small amounts of spatial noise during inference
     (X = 0.05). Parameters the same as B11, and sequences like H2."""
     self.init({"cellsPerColumn": 4,
-               "activationThreshold": 8})
+               "activationThreshold": 8,
+               "minThreshold": 8})
 
     numbers = self.sequenceMachine.generateNumbers(2, 20, (10, 15))
     sequence = self.sequenceMachine.generateFromNumbers(numbers)
@@ -522,7 +523,8 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
 
     # train TM on noisy sequences with orphan decay turned off
     self.init({"cellsPerColumn": 4,
-               "activationThreshold": 8})
+               "activationThreshold": 8,
+               "minThreshold": 8})
 
     numbers = self.sequenceMachine.generateNumbers(2, 20, (10, 15))
     sequence = self.sequenceMachine.generateFromNumbers(numbers)
@@ -546,6 +548,7 @@ class ExtensiveTemporalMemoryTest(AbstractTemporalMemoryTest):
     # train TM on the same set of noisy sequences with orphan decay turned on
     self.init({"cellsPerColumn": 4,
                "activationThreshold": 8,
+               "minThreshold": 8,
                "predictedSegmentDecrement": 0.04})
 
     for i in xrange(10):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -28,11 +27,9 @@ import numpy
 
 from nupic.encoders.base import defaultDtype
 from nupic.data import SENTINEL_VALUE_FOR_MISSING_DATA
-from nupic.data.fieldmeta import FieldMetaType
+from nupic.data.field_meta import FieldMetaType
 from nupic.support.unittesthelpers.algorithm_test_helpers import getSeed
-from nupic.encoders.random_distributed_scalar import (
-  RandomDistributedScalarEncoder
-)
+from nupic.encoders import RandomDistributedScalarEncoder
 
 try:
   import capnp

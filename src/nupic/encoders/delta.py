@@ -22,15 +22,22 @@
 import numbers
 
 from nupic.data import SENTINEL_VALUE_FOR_MISSING_DATA
-from nupic.encoders.adaptivescalar import AdaptiveScalarEncoder
+from nupic.encoders.adaptive_scalar import AdaptiveScalarEncoder
 from nupic.encoders.base import EncoderResult
+
+try:
+  import capnp
+except ImportError:
+  capnp = None
+if capnp:
+  from nupic.encoders.delta_capnp import DeltaEncoderProto
 
 
 class DeltaEncoder(AdaptiveScalarEncoder):
   """
-  This is an implementation of a delta encoder. The delta encoder encodes differences between
-  successive scalar values instead of encoding the actual values. It returns an actual value when
-  decoding and not a delta.
+  This is an implementation of a delta encoder. The delta encoder encodes
+  differences between successive scalar values instead of encoding the actual
+  values. It returns an actual value when decoding and not a delta.
   """
 
 
@@ -110,6 +117,11 @@ class DeltaEncoder(AdaptiveScalarEncoder):
 
 
   @classmethod
+  def getSchema(cls):
+    return DeltaEncoderProto
+
+
+  @classmethod
   def read(cls, proto):
     encoder = object.__new__(cls)
     encoder.width = proto.width
@@ -118,9 +130,12 @@ class DeltaEncoder(AdaptiveScalarEncoder):
     encoder._adaptiveScalarEnc = (
       AdaptiveScalarEncoder.read(proto.adaptiveScalarEnc)
     )
-    encoder._prevAbsolute = proto.prevAbsolute
-    encoder._prevDelta = proto.prevDelta
+    encoder._prevAbsolute = None if proto.prevAbsolute == 0 else proto.prevAbsolute
+    encoder._prevDelta = None if proto.prevDelta == 0 else proto.prevDelta
     encoder._stateLock = proto.stateLock
+    encoder._learningEnabled = proto.learningEnabled
+    encoder.description = []
+    encoder.encoders = None
     return encoder
 
 
@@ -129,6 +144,9 @@ class DeltaEncoder(AdaptiveScalarEncoder):
     proto.name = self.name or ""
     proto.n = self.n
     self._adaptiveScalarEnc.write(proto.adaptiveScalarEnc)
-    proto.prevAbsolute = self._prevAbsolute
-    proto.prevDelta = self._prevDelta
+    if self._prevAbsolute:
+      proto.prevAbsolute = self._prevAbsolute
+    if self._prevDelta:
+      proto.prevDelta = self._prevDelta
     proto.stateLock = self._stateLock
+    proto.learningEnabled = self._learningEnabled

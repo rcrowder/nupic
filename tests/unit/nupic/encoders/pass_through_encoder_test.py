@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -29,7 +28,7 @@ import unittest2 as unittest
 
 import numpy
 
-from nupic.encoders.pass_through_encoder import PassThroughEncoder
+from nupic.encoders import PassThroughEncoder
 
 try:
   import capnp

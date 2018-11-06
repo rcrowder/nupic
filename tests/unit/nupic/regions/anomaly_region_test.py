@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2015, Numenta, Inc.  Unless you have purchased from
@@ -25,7 +24,7 @@ import unittest
 
 import numpy
 
-from nupic.regions.AnomalyRegion import AnomalyRegion
+from nupic.regions.anomaly_region import AnomalyRegion
 
 try:
   import capnp

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have an agreement
@@ -29,7 +28,7 @@ import unittest2 as unittest
 from pkg_resources import resource_filename
 
 
-from nupic.frameworks.opf.opfhelpers import (
+from nupic.frameworks.opf.helpers import (
   loadExperimentDescriptionScriptFromDir,
   getExperimentDescriptionInterfaceFromModule
 )
@@ -221,11 +220,11 @@ class PositiveTests(MyTestCaseBase):
     modelDesc = expIface.getModelDescription()
 
     tpActivationThreshold = modelDesc['modelParams'] \
-        ['tpParams']['activationThreshold']
+        ['tmParams']['activationThreshold']
 
     expectedValue = 12
     self.assertEqual(tpActivationThreshold, expectedValue,
-                     "Expected tp activationThreshold=%s, but got %s" % (
+                     "Expected tm activationThreshold=%s, but got %s" % (
                       expectedValue, tpActivationThreshold))
 
 

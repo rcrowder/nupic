@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -29,8 +28,8 @@ import logging
 from pkg_resources import resource_filename
 
 from nupic.frameworks.opf.metrics import MetricSpec
-from nupic.frameworks.opf.modelfactory import ModelFactory
-from nupic.frameworks.opf.predictionmetricsmanager import MetricsManager
+from nupic.frameworks.opf.model_factory import ModelFactory
+from nupic.frameworks.opf.prediction_metrics_manager import MetricsManager
 
 import model_params
 
@@ -55,7 +54,7 @@ _METRIC_SPECS = (
                params={'errorMetric': 'altMAPE', 'window': 1000, 'steps': 1}),
 )
 
-_NUM_RECORDS = 1000
+_NUM_RECORDS = 4000
 
 
 

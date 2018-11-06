@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -28,7 +27,7 @@ import unittest2 as unittest
 
 from nupic.encoders.multi import MultiEncoder
 from nupic.encoders import ScalarEncoder, AdaptiveScalarEncoder, SDRCategoryEncoder
-from nupic.data.dictutils import DictObj
+from nupic.data.dict_utils import DictObj
 
 try:
   import capnp

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2014, Numenta, Inc.  Unless you have purchased from
@@ -29,7 +28,7 @@ import cPickle
 import numpy
 
 from nupic.bindings.regions.PyRegion import RealNumpyDType
-from nupic.algorithms.KNNClassifier import KNNClassifier
+from nupic.algorithms.knn_classifier import KNNClassifier
 
 import pca_knn_data
 
@@ -39,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 
 class KNNClassifierTest(unittest.TestCase):
   """Tests for k Nearest Neighbor classifier"""
-  
+
 
   def runTestKNNClassifier(self, short = 0):
     """ Test the KNN classifier in this module. short can be:
@@ -75,7 +74,7 @@ class KNNClassifierTest(unittest.TestCase):
       patternDict[i]['pattern'] = patterns[i]
       patternDict[i]['category'] = numpy.random.randint(0, numClasses-1)
       testDict[i] = copy.deepcopy(patternDict[i])
-      testDict[i]['pattern'][:0.02*patternSize] = numpy.random.rand()
+      testDict[i]['pattern'][:int(0.02*patternSize)] = numpy.random.rand()
       testDict[i]['category'] = None
 
     LOGGER.info("\nTesting KNN Classifier with L2 norm")
@@ -95,7 +94,7 @@ class KNNClassifierTest(unittest.TestCase):
       "slightly alter the training data and expect None to be returned for the "
       "classifications.")
     knnExact = KNNClassifier(k=1, exact=True)
-    failures += simulateClassifier(knnExact, 
+    failures += simulateClassifier(knnExact,
                                    patternDict,
                                    "KNN Classifier with exact matching test",
                                    testDict=testDict)

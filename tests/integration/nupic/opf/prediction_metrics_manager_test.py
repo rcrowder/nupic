@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -20,12 +19,12 @@
 # http://numenta.org/licenses/
 # ----------------------------------------------------------------------
 
-"""This file invokes predictionmetricsmanager.py tests
+"""This file invokes prediction_metrics_manager.py tests
 
 TODO: Move these tests to unit test format.
 """
 
-from nupic.frameworks.opf.predictionmetricsmanager import (
+from nupic.frameworks.opf.prediction_metrics_manager import (
     test as predictionMetricsManagerTest)
 
 

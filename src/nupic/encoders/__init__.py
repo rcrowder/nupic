@@ -20,16 +20,18 @@
 # ----------------------------------------------------------------------
 
 from scalar import ScalarEncoder
-from adaptivescalar import AdaptiveScalarEncoder
+from random_distributed_scalar import RandomDistributedScalarEncoder
+from adaptive_scalar import AdaptiveScalarEncoder
 from date import DateEncoder
-from logenc import LogEncoder
+from logarithm import LogEncoder
 from category import CategoryEncoder
-from sdrcategory import SDRCategoryEncoder
+from sdr_category import SDRCategoryEncoder
 from delta import DeltaEncoder
-from scalarspace import ScalarSpaceEncoder
+from scalar_space import ScalarSpaceEncoder
 from coordinate import CoordinateEncoder
 from geospatial_coordinate import GeospatialCoordinateEncoder
-from nupic.encoders.pass_through_encoder import PassThroughEncoder
+from pass_through import PassThroughEncoder
+from sparse_pass_through import SparsePassThroughEncoder
 # multiencoder must be imported last because it imports * from this module!
 from multi import MultiEncoder
 from utils import bitsToString

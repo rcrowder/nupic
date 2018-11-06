@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
 # Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
@@ -23,7 +22,7 @@
 """Unit tests for InferenceShifter."""
 
 from nupic.data.inference_shifter import InferenceShifter
-from nupic.frameworks.opf.opfutils import InferenceElement, ModelResult
+from nupic.frameworks.opf.opf_utils import InferenceElement, ModelResult
 from nupic.support.unittesthelpers.testcasebase import (TestCaseBase,
                                                         unittest)
 
